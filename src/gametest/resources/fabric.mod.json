@@ -1,0 +1,15 @@
+{
+	"schemaVersion": 1,
+	"id": "packtoggle-test",
+	"version": "1.0.0",
+	"name": "Pack Toggle Test",
+	"environment": "client",
+	"entrypoints": {
+		"fabric-client-gametest": [
+			"com.kclucas.packtoggle.test.PackToggleClientTest"
+		]
+	},
+	"depends": {
+		"packtoggle": "*"
+	}
+}

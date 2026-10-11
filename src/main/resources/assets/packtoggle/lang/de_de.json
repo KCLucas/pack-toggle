@@ -1,0 +1,20 @@
+{
+	"key.category.packtoggle.main": "Pack Toggle",
+	"key.packtoggle.toggle": "Ressourcenpakete umschalten",
+	"key.packtoggle.save": "Aktuelle Ressourcenpakete speichern",
+	"packtoggle.button.save": "Speichern",
+	"packtoggle.button.save.tooltip": "Merkt sich die aktiven Ressourcenpakete und ihre Reihenfolge.",
+	"packtoggle.button.remove": "Entfernen",
+	"packtoggle.button.remove.tooltip": "Nimmt alle Ressourcenpakete raus, sodass nur das Standard-Aussehen übrig bleibt.",
+	"packtoggle.button.restore": "Hinzufügen",
+	"packtoggle.button.restore.tooltip": "Fügt die gespeicherten Ressourcenpakete in der gespeicherten Reihenfolge wieder ein.",
+	"packtoggle.button.restore.none": "Noch nichts gespeichert. Erst \"Speichern\" benutzen.",
+	"packtoggle.toast.title": "Pack Toggle",
+	"packtoggle.toast.saved": "%s Ressourcenpaket(e) gespeichert",
+	"packtoggle.toast.removed": "%s Ressourcenpaket(e) entfernt",
+	"packtoggle.toast.saved_and_removed": "%s Ressourcenpaket(e) gespeichert und entfernt",
+	"packtoggle.toast.restored": "%s Ressourcenpaket(e) wieder hinzugefügt",
+	"packtoggle.toast.restored_missing": "%s Paket(e) hinzugefügt, %s nicht gefunden",
+	"packtoggle.toast.nothing_saved": "Noch keine Ressourcenpakete gespeichert",
+	"packtoggle.toast.nothing_active": "Keine Ressourcenpakete aktiv, die gespeichert werden könnten"
+}

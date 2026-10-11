@@ -1,0 +1,30 @@
+{
+	"schemaVersion": 1,
+	"id": "packtoggle",
+	"version": "${version}",
+	"name": "Pack Toggle",
+	"description": "Save your resource pack order once, then switch all packs off and back on in the right order with one key or button.",
+	"authors": [
+		"kclucas"
+	],
+	"contact": {
+		"sources": "https://github.com/KCLucas/pack-toggle"
+	},
+	"license": "MIT",
+	"icon": "assets/packtoggle/icon.png",
+	"environment": "client",
+	"entrypoints": {
+		"client": [
+			"com.kclucas.packtoggle.client.PackToggleClient"
+		]
+	},
+	"mixins": [
+		"packtoggle.client.mixins.json"
+	],
+	"depends": {
+		"fabricloader": ">=0.19.2",
+		"minecraft": "~1.21.11",
+		"java": ">=21",
+		"fabric-api": "*"
+	}
+}

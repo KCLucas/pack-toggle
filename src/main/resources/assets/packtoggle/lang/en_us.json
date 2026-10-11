@@ -1,0 +1,20 @@
+{
+	"key.category.packtoggle.main": "Pack Toggle",
+	"key.packtoggle.toggle": "Toggle resource packs",
+	"key.packtoggle.save": "Save current resource packs",
+	"packtoggle.button.save": "Save packs",
+	"packtoggle.button.save.tooltip": "Remembers the active resource packs and their order.",
+	"packtoggle.button.remove": "Remove packs",
+	"packtoggle.button.remove.tooltip": "Takes all resource packs out, so only the default look is left.",
+	"packtoggle.button.restore": "Add packs",
+	"packtoggle.button.restore.tooltip": "Puts the saved resource packs back in, in the saved order.",
+	"packtoggle.button.restore.none": "No packs saved yet. Use \"Save packs\" first.",
+	"packtoggle.toast.title": "Pack Toggle",
+	"packtoggle.toast.saved": "Saved %s resource pack(s)",
+	"packtoggle.toast.removed": "Removed %s resource pack(s)",
+	"packtoggle.toast.saved_and_removed": "Saved and removed %s resource pack(s)",
+	"packtoggle.toast.restored": "Added %s resource pack(s) back",
+	"packtoggle.toast.restored_missing": "Added %s pack(s) back, %s not found",
+	"packtoggle.toast.nothing_saved": "No resource packs saved yet",
+	"packtoggle.toast.nothing_active": "No resource packs active to save"
+}
