@@ -6,6 +6,7 @@ import com.google.gson.JsonParseException;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
@@ -39,12 +40,16 @@ import java.util.function.Consumer;
 public final class Onboarding {
 
 	/** Version dieses Codes. Bei jeder Änderung an Vorlage oder Screen erhöhen. */
-	public static final int CODE_VERSION = 1;
+	public static final int CODE_VERSION = 2;
 
 	private static final String SHARE_KEY = "kclucas:onboarding";
 	private static final Logger LOGGER = LoggerFactory.getLogger("kclucas-onboarding");
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 	private static final Path SEEN_FILE = FabricLoader.getInstance().getConfigDir().resolve("kclucas-mods.json");
+	private static final int STABLE_TICKS = 10;
+
+	private static @Nullable Screen stableScreen;
+	private static int stableTicks;
 
 	/** Eine Seite: Überschrift, Erklärung und optional ein Bild im Format 16:9. */
 	public record Page(Component title, Component text, @Nullable Identifier image) {
@@ -93,16 +98,37 @@ public final class Onboarding {
 		if (Boolean.TRUE.equals(shared.get("presented")) || client.getOverlay() != null) {
 			return;
 		}
-		// Normalerweise im Hauptmenü. Ersetzt ein Client das Hauptmenü durch ein eigenes, dann beim ersten Betreten einer Welt.
-		boolean atTitle = client.screen instanceof TitleScreen;
-		boolean inWorld = client.level != null && client.screen == null;
-		if (!atTitle && !inWorld) {
+		if (!isGoodMoment(client)) {
 			return;
 		}
 		shared.put("presented", Boolean.TRUE);
 		if (shared.get("presenter") instanceof Runnable presenter) {
 			presenter.run();
 		}
+	}
+
+	/**
+	 * Der richtige Moment ist das Hauptmenü. Manche Clients (z. B. NoRisk) ersetzen es durch ein eigenes, deshalb
+	 * zählt außerhalb einer Welt auch jeder Screen, der nicht von Minecraft selbst stammt – aber erst, wenn er
+	 * eine halbe Sekunde lang offen ist, damit kurz aufblitzende Zwischen-Screens nicht auslösen.
+	 * Greift beides nicht, erscheint die Tour beim ersten Betreten einer Welt.
+	 */
+	private static boolean isGoodMoment(Minecraft client) {
+		Screen screen = client.screen;
+		if (screen != stableScreen) {
+			stableScreen = screen;
+			stableTicks = 0;
+		} else {
+			stableTicks++;
+		}
+
+		if (client.level != null) {
+			return screen == null;
+		}
+		if (screen == null || stableTicks < STABLE_TICKS) {
+			return false;
+		}
+		return screen instanceof TitleScreen || !screen.getClass().getName().startsWith("net.minecraft.");
 	}
 
 	private static void presentUnseen() {
