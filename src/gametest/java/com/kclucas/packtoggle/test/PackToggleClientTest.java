@@ -2,6 +2,7 @@ package com.kclucas.packtoggle.test;
 
 import com.kclucas.packtoggle.client.PackManager;
 import com.kclucas.packtoggle.client.PackToggleClient;
+import com.kclucas.packtoggle.client.onboarding.OnboardingScreen;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
 import net.fabricmc.fabric.api.client.gametest.v1.context.TestSingleplayerContext;
@@ -44,6 +45,22 @@ public class PackToggleClientTest implements FabricClientGameTest {
 			c.options.guiScale().set(3);
 			c.resizeDisplay();
 		});
+
+		// Erster Start im Profil: Der Willkommens-Screen erscheint von selbst. Hier mit nur einer Mod.
+		context.waitForScreen(OnboardingScreen.class);
+		context.waitTicks(10);
+		context.takeScreenshot("onboarding-1-willkommen");
+		for (int step = 0; step < 3; step++) {
+			context.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
+			context.waitTicks(5);
+			context.takeScreenshot("onboarding-" + (step + 2) + "-schritt");
+		}
+		// Überspringen (Esc) schließt den Screen sofort.
+		context.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
+		context.waitTicks(10);
+		if (context.computeOnClient(c -> c.screen instanceof OnboardingScreen)) {
+			throw new AssertionError("Esc sollte den Tutorial-Screen schließen");
+		}
 
 		// Ausgangslage: drei Pakete aktiv, in einer festen Reihenfolge.
 		context.runOnClient(c -> {

@@ -1,13 +1,18 @@
 package com.kclucas.packtoggle.client;
 
+import com.kclucas.packtoggle.client.onboarding.Onboarding;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import org.lwjgl.glfw.GLFW;
+
+import java.util.List;
 
 public class PackToggleClient implements ClientModInitializer {
 
@@ -34,6 +39,31 @@ public class PackToggleClient implements ClientModInitializer {
 				"key.packtoggle.save", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), CATEGORY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
+
+		Onboarding.register(createTutorial());
+	}
+
+	/** Die kurze Tour, die beim ersten Start in einem Profil erscheint. */
+	private static Onboarding.Tutorial createTutorial() {
+		Component toggleKeyName = Component.keybind("key.packtoggle.toggle").withStyle(ChatFormatting.YELLOW);
+		return new Onboarding.Tutorial(MOD_ID,
+				Component.literal("Pack Toggle"),
+				Component.translatable("packtoggle.tutorial.description"),
+				Identifier.fromNamespaceAndPath(MOD_ID, "icon.png"),
+				1,
+				List.of(
+						new Onboarding.Page(
+								Component.translatable("packtoggle.tutorial.save.title"),
+								Component.translatable("packtoggle.tutorial.save.text"),
+								Identifier.fromNamespaceAndPath(MOD_ID, "textures/tutorial/save.png")),
+						new Onboarding.Page(
+								Component.translatable("packtoggle.tutorial.switch.title"),
+								Component.translatable("packtoggle.tutorial.switch.text"),
+								Identifier.fromNamespaceAndPath(MOD_ID, "textures/tutorial/switch.png")),
+						new Onboarding.Page(
+								Component.translatable("packtoggle.tutorial.hotkey.title", toggleKeyName),
+								Component.translatable("packtoggle.tutorial.hotkey.text"),
+								Identifier.fromNamespaceAndPath(MOD_ID, "textures/tutorial/hotkey.png"))));
 	}
 
 	private void onClientTick(Minecraft client) {

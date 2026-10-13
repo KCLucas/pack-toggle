@@ -34,6 +34,12 @@ If you never saved anything, the first press saves your current packs automatica
 
 Both keys can be changed under *Options → Controls → Key Binds → Pack Toggle*. A second key, *Save current resource packs*, is unbound by default.
 
+## Welcome tour
+
+The first time you start a profile with this mod, a short tour shows how it works - with Back and Next buttons and a Skip button that is always there. It only appears once. If you use several mods by KCLucas, they share one tour and you can pick which ones you want to see.
+
+![Welcome tour](https://raw.githubusercontent.com/KCLucas/pack-toggle/master/images/tour.png)
+
 ## Good to know
 
 - Packs that Minecraft forces itself (the default textures, resources of mods, a server resource pack) are never touched.
