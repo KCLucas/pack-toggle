@@ -44,7 +44,7 @@ The first time you start a profile with this mod, a short tour shows how it work
 
 - Packs that Minecraft forces itself (the default textures, resources of mods, a server resource pack) are never touched.
 - If a saved pack was deleted from the folder, the other packs are still restored and you get a short notice.
-- The saved order is stored in `config/packtoggle.json`.
+- The saved order is stored in `config/KCMods/packtoggle/config.json`.
 - Purely client-side: works on any server.
 - English and German translations.
 

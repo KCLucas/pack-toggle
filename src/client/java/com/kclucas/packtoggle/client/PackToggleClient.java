@@ -43,14 +43,13 @@ public class PackToggleClient implements ClientModInitializer {
 		Onboarding.register(createTutorial());
 	}
 
-	/** Die kurze Tour, die beim ersten Start in einem Profil erscheint. */
+	/** Die kurze Tour beim ersten Start in einem Profil, dazu was in welcher Version neu ist (neueste zuerst). */
 	private static Onboarding.Tutorial createTutorial() {
 		Component toggleKeyName = Component.keybind("key.packtoggle.toggle").withStyle(ChatFormatting.YELLOW);
 		return new Onboarding.Tutorial(MOD_ID,
 				Component.literal("Pack Toggle"),
 				Component.translatable("packtoggle.tutorial.description"),
 				Identifier.fromNamespaceAndPath(MOD_ID, "icon.png"),
-				1,
 				List.of(
 						new Onboarding.Page(
 								Component.translatable("packtoggle.tutorial.save.title"),
@@ -63,7 +62,13 @@ public class PackToggleClient implements ClientModInitializer {
 						new Onboarding.Page(
 								Component.translatable("packtoggle.tutorial.hotkey.title", toggleKeyName),
 								Component.translatable("packtoggle.tutorial.hotkey.text"),
-								Identifier.fromNamespaceAndPath(MOD_ID, "textures/tutorial/hotkey.png"))));
+								Identifier.fromNamespaceAndPath(MOD_ID, "textures/tutorial/hotkey.png"))),
+				List.of(
+						new Onboarding.Release("1.2.0", List.of(
+								Component.translatable("packtoggle.news.1_2_0.folder"),
+								Component.translatable("packtoggle.news.1_2_0.news"))),
+						new Onboarding.Release("1.1.1", List.of(
+								Component.translatable("packtoggle.news.1_1_1.menu")))));
 	}
 
 	private void onClientTick(Minecraft client) {

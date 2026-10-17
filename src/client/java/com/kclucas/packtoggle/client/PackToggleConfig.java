@@ -3,7 +3,7 @@ package com.kclucas.packtoggle.client;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.JsonParseException;
-import net.fabricmc.loader.api.FabricLoader;
+import com.kclucas.packtoggle.client.onboarding.KcFiles;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ public class PackToggleConfig {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(PackToggleClient.MOD_ID);
 	private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-	private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("packtoggle.json");
+	private static final Path PATH = KcFiles.file(PackToggleClient.MOD_ID, "config.json", "packtoggle.json");
 
 	/**
 	 * Die gespeicherten Ressourcenpakete in der Reihenfolge, in der Minecraft sie lädt:

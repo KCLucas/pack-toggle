@@ -18,12 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Erst eine Willkommens-Seite mit allen neuen Mods (bei mehreren kann man auswählen, welche man sehen will),
- * danach die Tutorial-Seiten der gewählten Mods nacheinander – mit Zurück, Weiter und einem Überspringen-Knopf.
+ * Erst eine Übersicht mit allen Mods, die etwas zu zeigen haben (bei mehreren kann man auswählen),
+ * danach nacheinander: bei neuen Mods die Tour, bei aktualisierten eine Seite "Was ist neu" –
+ * mit Zurück, Weiter und einem Überspringen-Knopf.
  */
 public class OnboardingScreen extends Screen {
 
-	/** Tutorial-Bilder liegen als 960x540 (16:9) vor. */
+	/** Tour-Bilder liegen als 960x540 (16:9) vor. */
 	private static final int IMAGE_TEXTURE_WIDTH = 960;
 	private static final int IMAGE_TEXTURE_HEIGHT = 540;
 	private static final int ICON_TEXTURE_SIZE = 512;
@@ -44,50 +45,65 @@ public class OnboardingScreen extends Screen {
 	private static final int CARD_GAP = 4;
 	private static final int BUTTON_Y_OFFSET = 28;
 
-	/** Eine Tutorial-Seite samt der Mod, zu der sie gehört. */
-	private record Step(Onboarding.Tutorial tutorial, int tutorialIndex, Onboarding.Page page, int pageIndex) {
+	/** Eine Seite: eine Tour-Seite ({@code page} gesetzt) oder die Neuigkeiten einer Mod ({@code page} leer). */
+	private record Step(Onboarding.Pending pending, int modIndex, Onboarding.@Nullable Page page, int pageIndex,
+			int pageCount) {
 	}
 
 	private final @Nullable Screen parent;
-	private final List<Onboarding.Tutorial> tutorials;
+	private final List<Onboarding.Pending> pending;
 	private final boolean[] selected;
 	private final boolean showWelcome;
 	private List<Step> steps = List.of();
-	/** -1 ist die Willkommens-Seite, sonst der Index in {@link #steps}. */
+	/** -1 ist die Übersicht, sonst der Index in {@link #steps}. */
 	private int index;
 
 	private int cardsLeft;
 	private int cardsTop;
 	private int cardsWidth;
 
-	public OnboardingScreen(@Nullable Screen parent, List<Onboarding.Tutorial> tutorials, boolean showWelcome) {
+	public OnboardingScreen(@Nullable Screen parent, List<Onboarding.Pending> pending, boolean showWelcome) {
 		super(Component.translatable("kclucas.onboarding.title"));
 		this.parent = parent;
-		this.tutorials = List.copyOf(tutorials);
-		this.selected = new boolean[this.tutorials.size()];
+		this.pending = List.copyOf(pending);
+		this.selected = new boolean[this.pending.size()];
 		java.util.Arrays.fill(this.selected, true);
 		this.showWelcome = showWelcome;
 		this.index = showWelcome ? -1 : 0;
 		rebuildSteps();
 	}
 
-	/** Die aktuelle Seite: -1 ist die Willkommens-Seite, danach zählen die Tutorial-Seiten ab 0. */
+	/** Die aktuelle Seite: -1 ist die Übersicht, danach zählen die Seiten ab 0. */
 	public int getStepIndex() {
 		return this.index;
 	}
 
+	/** Für den Test: Ist die aktuelle Seite eine "Was ist neu"-Seite? */
+	public boolean isNewsStep() {
+		return this.index >= 0 && this.steps.get(this.index).page() == null;
+	}
+
+	private boolean onlyUpdates() {
+		return this.pending.stream().allMatch(Onboarding.Pending::isUpdate);
+	}
+
 	private void rebuildSteps() {
 		List<Step> list = new ArrayList<>();
-		int tutorialIndex = 0;
-		for (int i = 0; i < this.tutorials.size(); i++) {
+		int modIndex = 0;
+		for (int i = 0; i < this.pending.size(); i++) {
 			if (!this.selected[i]) {
 				continue;
 			}
-			Onboarding.Tutorial tutorial = this.tutorials.get(i);
-			for (int p = 0; p < tutorial.pages().size(); p++) {
-				list.add(new Step(tutorial, tutorialIndex, tutorial.pages().get(p), p));
+			Onboarding.Pending entry = this.pending.get(i);
+			if (entry.isUpdate()) {
+				list.add(new Step(entry, modIndex, null, 0, 1));
+			} else {
+				List<Onboarding.Page> pages = entry.tutorial().pages();
+				for (int p = 0; p < pages.size(); p++) {
+					list.add(new Step(entry, modIndex, pages.get(p), p, pages.size()));
+				}
 			}
-			tutorialIndex++;
+			modIndex++;
 		}
 		this.steps = list;
 	}
@@ -112,15 +128,20 @@ public class OnboardingScreen extends Screen {
 
 		// Überspringen steht immer an derselben Stelle unten links und ist farblich abgesetzt.
 		Component skipLabel = Component.translatable(
-				this.index < 0 ? "kclucas.onboarding.skip" : "kclucas.onboarding.skip_tutorial")
+				this.index < 0 || isNewsStep() ? "kclucas.onboarding.skip" : "kclucas.onboarding.skip_tutorial")
 				.withStyle(ChatFormatting.YELLOW);
 		addRenderableWidget(Button.builder(skipLabel, button -> finish()).bounds(margin, y, 110, 20).build());
 
 		if (this.index < 0) {
 			int count = selectedCount();
-			Component label = this.tutorials.size() > 1
-					? Component.translatable("kclucas.onboarding.start_count", count)
-					: Component.translatable("kclucas.onboarding.start");
+			Component label;
+			if (onlyUpdates()) {
+				label = Component.translatable("kclucas.onboarding.show_news");
+			} else if (this.pending.size() > 1) {
+				label = Component.translatable("kclucas.onboarding.start_count", count);
+			} else {
+				label = Component.translatable("kclucas.onboarding.start");
+			}
 			Button start = Button.builder(label, button -> next())
 					.bounds(this.width - margin - 150, y, 150, 20).build();
 			start.active = count > 0;
@@ -142,8 +163,8 @@ public class OnboardingScreen extends Screen {
 		}
 		Step current = this.steps.get(this.index);
 		Step following = this.steps.get(this.index + 1);
-		if (following.tutorial() != current.tutorial()) {
-			return Component.translatable("kclucas.onboarding.next_mod", following.tutorial().name());
+		if (following.pending() != current.pending()) {
+			return Component.translatable("kclucas.onboarding.next_mod", following.pending().tutorial().name());
 		}
 		return Component.translatable("kclucas.onboarding.next");
 	}
@@ -170,9 +191,9 @@ public class OnboardingScreen extends Screen {
 		}
 	}
 
-	/** Fertig oder übersprungen: In beiden Fällen kommt der Screen in diesem Profil nicht von selbst wieder. */
+	/** Fertig oder übersprungen: In beiden Fällen gilt die installierte Version jeder Mod als gesehen. */
 	private void finish() {
-		Onboarding.markSeen(this.tutorials);
+		Onboarding.markSeen(this.pending.stream().map(Onboarding.Pending::tutorial).toList());
 		this.minecraft.setScreen(this.parent);
 	}
 
@@ -205,8 +226,8 @@ public class OnboardingScreen extends Screen {
 		if (super.mouseClicked(event, doubleClick)) {
 			return true;
 		}
-		// Auf der Willkommens-Seite wählt ein Klick auf eine Mod-Karte sie an oder ab.
-		if (this.index < 0 && this.tutorials.size() > 1 && event.button() == 0) {
+		// Auf der Übersicht wählt ein Klick auf eine Mod-Karte sie an oder ab.
+		if (this.index < 0 && this.pending.size() > 1 && event.button() == 0) {
 			int card = cardAt(event.x(), event.y());
 			if (card >= 0) {
 				this.selected[card] = !this.selected[card];
@@ -224,7 +245,7 @@ public class OnboardingScreen extends Screen {
 		int relative = (int) (y - this.cardsTop);
 		int slot = relative / (CARD_HEIGHT + CARD_GAP);
 		boolean inGap = relative % (CARD_HEIGHT + CARD_GAP) >= CARD_HEIGHT;
-		return slot < this.tutorials.size() && !inGap ? slot : -1;
+		return slot < this.pending.size() && !inGap ? slot : -1;
 	}
 
 	// ---- Zeichnen ----
@@ -235,22 +256,32 @@ public class OnboardingScreen extends Screen {
 		super.render(graphics, mouseX, mouseY, partialTick);
 		if (this.index < 0) {
 			renderWelcome(graphics, mouseX, mouseY);
+			return;
+		}
+		Step step = this.steps.get(this.index);
+		renderHeader(graphics, step);
+		if (step.page() != null) {
+			renderPage(graphics, step.page());
 		} else {
-			renderStep(graphics, this.steps.get(this.index));
+			renderNews(graphics, step.pending());
 		}
 	}
 
 	private void renderWelcome(GuiGraphics graphics, int mouseX, int mouseY) {
-		boolean multiple = this.tutorials.size() > 1;
+		boolean multiple = this.pending.size() > 1;
+		boolean updates = onlyUpdates();
 		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
-		Component heading = Component.translatable("kclucas.onboarding.welcome.title");
-		Component intro = Component.translatable(multiple
-				? "kclucas.onboarding.welcome.intro_many" : "kclucas.onboarding.welcome.intro_one");
+		Component heading = Component.translatable(updates
+				? "kclucas.onboarding.update.title" : "kclucas.onboarding.welcome.title");
+		boolean mixed = !updates && this.pending.stream().anyMatch(Onboarding.Pending::isUpdate);
+		Component intro = Component.translatable(updates ? "kclucas.onboarding.update.intro"
+				: mixed ? "kclucas.onboarding.welcome.intro_mixed"
+				: multiple ? "kclucas.onboarding.welcome.intro_many" : "kclucas.onboarding.welcome.intro_one");
 		List<FormattedCharSequence> introLines = this.font.split(intro, panelWidth);
 
 		float headingScale = this.font.width(heading) * 1.5F <= this.width - 24 ? 1.5F : 1.0F;
 		int headingHeight = Math.round(9 * headingScale);
-		int cardsHeight = this.tutorials.size() * (CARD_HEIGHT + CARD_GAP) - CARD_GAP;
+		int cardsHeight = this.pending.size() * (CARD_HEIGHT + CARD_GAP) - CARD_GAP;
 		int contentHeight = headingHeight + 8 + introLines.size() * 10 + 10 + cardsHeight + (multiple ? 16 : 0);
 		int y = Math.max(10, (this.height - BUTTON_Y_OFFSET - 8 - contentHeight) / 2);
 
@@ -266,8 +297,8 @@ public class OnboardingScreen extends Screen {
 		this.cardsTop = y;
 		this.cardsWidth = panelWidth;
 		int hovered = multiple ? cardAt(mouseX, mouseY) : -1;
-		for (int i = 0; i < this.tutorials.size(); i++) {
-			renderCard(graphics, this.tutorials.get(i), this.cardsLeft, y, panelWidth, multiple, this.selected[i], hovered == i);
+		for (int i = 0; i < this.pending.size(); i++) {
+			renderCard(graphics, this.pending.get(i), this.cardsLeft, y, panelWidth, multiple, this.selected[i], hovered == i);
 			y += CARD_HEIGHT + CARD_GAP;
 		}
 
@@ -277,8 +308,9 @@ public class OnboardingScreen extends Screen {
 		}
 	}
 
-	private void renderCard(GuiGraphics graphics, Onboarding.Tutorial tutorial, int x, int y, int width,
+	private void renderCard(GuiGraphics graphics, Onboarding.Pending entry, int x, int y, int width,
 			boolean selectable, boolean isSelected, boolean hovered) {
+		Onboarding.Tutorial tutorial = entry.tutorial();
 		int border = selectable && isSelected ? COLOR_ACCENT : COLOR_BORDER;
 		graphics.fill(x - 1, y - 1, x + width + 1, y + CARD_HEIGHT + 1, border);
 		graphics.fill(x, y, x + width, y + CARD_HEIGHT, 0xFF0C0F16);
@@ -290,9 +322,15 @@ public class OnboardingScreen extends Screen {
 		int textWidth = width - 44 - (selectable ? 28 : 8);
 		int nameColor = !selectable || isSelected ? COLOR_TEXT : COLOR_FAINT;
 		graphics.drawString(this.font, tutorial.name().copy().withStyle(ChatFormatting.BOLD), textLeft, y + 6, nameColor, true);
-		List<FormattedCharSequence> lines = this.font.split(tutorial.description(), textWidth);
-		for (int i = 0; i < Math.min(2, lines.size()); i++) {
-			graphics.drawString(this.font, lines.get(i), textLeft, y + 18 + i * 9, COLOR_MUTED, false);
+		if (entry.isUpdate()) {
+			// Bei Updates statt der Beschreibung: von welcher auf welche Version.
+			Component update = Component.translatable("kclucas.onboarding.updated_to", tutorial.modVersion());
+			graphics.drawString(this.font, update, textLeft, y + 18, COLOR_GOLD, false);
+		} else {
+			List<FormattedCharSequence> lines = this.font.split(tutorial.description(), textWidth);
+			for (int i = 0; i < Math.min(2, lines.size()); i++) {
+				graphics.drawString(this.font, lines.get(i), textLeft, y + 18 + i * 9, COLOR_MUTED, false);
+			}
 		}
 
 		if (selectable) {
@@ -325,25 +363,28 @@ public class OnboardingScreen extends Screen {
 		}
 	}
 
-	private void renderStep(GuiGraphics graphics, Step step) {
-		Onboarding.Tutorial tutorial = step.tutorial();
+	/** Kopfzeile: links die Mod, rechts wo man gerade ist, darunter ein Fortschrittsbalken. */
+	private void renderHeader(GuiGraphics graphics, Step step) {
+		Onboarding.Tutorial tutorial = step.pending().tutorial();
 		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
 		int left = (this.width - panelWidth) / 2;
 		int right = left + panelWidth;
 
-		// Kopfzeile: links die Mod, rechts wo man gerade ist.
 		drawIcon(graphics, tutorial.icon(), left, 8, 16);
 		graphics.drawString(this.font, tutorial.name().copy().withStyle(ChatFormatting.BOLD), left + 22, 12, COLOR_TEXT, true);
-		Component position = Component.translatable("kclucas.onboarding.step", step.pageIndex() + 1, tutorial.pages().size());
-		if (selectedCount() > 1 && this.tutorials.size() > 1) {
-			position = Component.translatable("kclucas.onboarding.mod_and_step",
-					step.tutorialIndex() + 1, selectedCount(), step.pageIndex() + 1, tutorial.pages().size());
+		Component position = step.page() == null
+				? Component.translatable("kclucas.onboarding.news")
+				: Component.translatable("kclucas.onboarding.step", step.pageIndex() + 1, step.pageCount());
+		if (selectedCount() > 1 && this.pending.size() > 1) {
+			position = Component.translatable("kclucas.onboarding.mod_and", step.modIndex() + 1, selectedCount(), position);
 		}
 		graphics.drawString(this.font, position, right - this.font.width(position), 12, COLOR_FAINT, false);
 		graphics.fill(left, 28, right, 29, COLOR_BORDER);
-		graphics.fill(left, 28, left + panelWidth * (step.pageIndex() + 1) / tutorial.pages().size(), 29, COLOR_ACCENT);
+		graphics.fill(left, 28, left + panelWidth * (step.pageIndex() + 1) / step.pageCount(), 29, COLOR_ACCENT);
+	}
 
-		Onboarding.Page page = step.page();
+	private void renderPage(GuiGraphics graphics, Onboarding.Page page) {
+		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
 		int textWidth = Math.min(panelWidth, 380);
 		List<FormattedCharSequence> lines = this.font.split(page.text(), textWidth);
 		int shownLines = Math.min(lines.size(), 5);
@@ -374,6 +415,58 @@ public class OnboardingScreen extends Screen {
 		y += 14;
 		for (int i = 0; i < shownLines; i++) {
 			graphics.drawCenteredString(this.font, lines.get(i), this.width / 2, y, COLOR_TEXT);
+			y += 10;
+		}
+	}
+
+	/** "Was ist neu": großes Icon, Überschrift, darunter je Version die Stichpunkte. */
+	private void renderNews(GuiGraphics graphics, Onboarding.Pending entry) {
+		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
+		int left = (this.width - panelWidth) / 2;
+		int textWidth = panelWidth - 24;
+
+		// Erst alles in Zeilen zerlegen, um den Block senkrecht mittig zu setzen.
+		record Line(FormattedCharSequence text, int color, int indent, int gapBefore) {
+		}
+		List<Line> lines = new ArrayList<>();
+		boolean several = entry.news().size() > 1;
+		for (Onboarding.Release release : entry.news()) {
+			if (several) {
+				lines.add(new Line(Component.translatable("kclucas.onboarding.version", release.version())
+						.withStyle(ChatFormatting.BOLD).getVisualOrderText(), COLOR_GOLD, 0, lines.isEmpty() ? 0 : 6));
+			}
+			for (Component note : release.notes()) {
+				List<FormattedCharSequence> wrapped = this.font.split(note, textWidth - 10);
+				for (int i = 0; i < wrapped.size(); i++) {
+					lines.add(new Line(wrapped.get(i), COLOR_TEXT, 10, i == 0 ? 3 : 0));
+				}
+			}
+		}
+
+		int iconSize = 48;
+		int blockHeight = iconSize + 10 + 14;
+		for (Line line : lines) {
+			blockHeight += 10 + line.gapBefore();
+		}
+		int top = 36;
+		int bottom = this.height - BUTTON_Y_OFFSET - 8;
+		int y = top + Math.max(0, (bottom - top - blockHeight) / 2);
+
+		drawIcon(graphics, entry.tutorial().icon(), (this.width - iconSize) / 2, y, iconSize);
+		y += iconSize + 10;
+		Component title = several
+				? Component.translatable("kclucas.onboarding.news_since", entry.seenVersion())
+				: Component.translatable("kclucas.onboarding.news_title", entry.news().getFirst().version());
+		graphics.drawCenteredString(this.font, title.copy().withStyle(ChatFormatting.BOLD), this.width / 2, y, COLOR_ACCENT);
+		y += 14;
+
+		for (Line line : lines) {
+			y += line.gapBefore();
+			int x = left + 12 + line.indent();
+			if (line.indent() > 0 && line.gapBefore() > 0) {
+				graphics.fill(x - 7, y + 3, x - 4, y + 6, COLOR_ACCENT);
+			}
+			graphics.drawString(this.font, line.text(), x, y, line.color(), false);
 			y += 10;
 		}
 	}
