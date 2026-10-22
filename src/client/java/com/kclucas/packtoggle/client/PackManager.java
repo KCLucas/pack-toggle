@@ -72,22 +72,36 @@ public final class PackManager {
 		// Neu einlesen, falls Pakete seit dem Speichern in den Ordner gelegt oder gelöscht wurden.
 		repository.reload();
 		List<String> available = new ArrayList<>();
+		int incompatible = 0;
 		for (String id : saved) {
-			if (repository.isAvailable(id)) {
+			Pack pack = repository.getPack(id);
+			if (pack != null) {
 				available.add(id);
+				if (!pack.getCompatibility().isCompatible()) {
+					incompatible++;
+				}
 			}
 		}
 
+		// Pakete für eine andere Version werden trotzdem geladen - sie waren beim Speichern ja aktiv -, aber im
+		// Menü fragt Minecraft dabei nach, also hier wenigstens ein Hinweis.
 		apply(client, available);
 		int missing = saved.size() - available.size();
-		toast(client, missing == 0
-				? Component.translatable("packtoggle.toast.restored", available.size())
-				: Component.translatable("packtoggle.toast.restored_missing", available.size(), missing));
+		Component message;
+		if (missing > 0) {
+			message = Component.translatable("packtoggle.toast.restored_missing", available.size(), missing);
+		} else if (incompatible > 0) {
+			message = Component.translatable("packtoggle.toast.restored_incompatible", available.size(), incompatible);
+		} else {
+			message = Component.translatable("packtoggle.toast.restored", available.size());
+		}
+		toast(client, message);
 	}
 
 	/**
 	 * Der Hotkey: Sind Pakete aktiv, werden sie entfernt, sonst die gespeicherten wieder eingesetzt.
-	 * Wurde noch nie gespeichert, sichert der erste Druck die aktiven Pakete automatisch, damit nichts verloren geht.
+	 * Weicht die aktive Auswahl vom gespeicherten Stand ab (nie gespeichert, später Pakete dazugenommen oder
+	 * umsortiert), merkt sich der Druck zuerst die aktive Auswahl - sonst kämen beim nächsten Druck nur die alten zurück.
 	 */
 	public static void toggle(Minecraft client) {
 		List<String> active = activeUserPacks(client);
@@ -95,7 +109,7 @@ public final class PackManager {
 			restore(client);
 			return;
 		}
-		if (PackToggleClient.getConfig().savedPacks.isEmpty()) {
+		if (!active.equals(PackToggleClient.getConfig().savedPacks)) {
 			store(active);
 			apply(client, List.of());
 			toast(client, Component.translatable("packtoggle.toast.saved_and_removed", active.size()));

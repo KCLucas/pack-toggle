@@ -112,6 +112,29 @@ public class PackToggleClientTest implements FabricClientGameTest {
 			waitForReload(context);
 			expectActive(context, ORDER, "nach zweitem F8");
 			context.takeScreenshot("packtoggle-5-hotkey-an");
+
+			// Nach dem Speichern die Auswahl ändern (ein Paket raus, Reihenfolge anders): F8 merkt sich den neuen
+			// Stand, statt beim nächsten Druck den alten zurückzubringen.
+			List<String> changed = List.of(ORDER.get(2), ORDER.get(0));
+			context.runOnClient(c -> {
+				PackRepository repository = c.getResourcePackRepository();
+				List<String> selection = new ArrayList<>(repository.getSelectedIds());
+				selection.removeAll(ORDER);
+				selection.addAll(changed);
+				repository.setSelected(selection);
+				c.options.updateResourcePacks(repository);
+			});
+			waitForReload(context);
+			expectActive(context, changed, "nach dem Ändern");
+			context.getInput().pressKey(GLFW.GLFW_KEY_F8);
+			context.waitTicks(5);
+			waitForReload(context);
+			expectActive(context, List.of(), "nach F8 mit geänderter Auswahl");
+			expectSaved(context, changed);
+			context.getInput().pressKey(GLFW.GLFW_KEY_F8);
+			context.waitTicks(5);
+			waitForReload(context);
+			expectActive(context, changed, "nach erneutem F8");
 		}
 
 		// Aufräumen, damit der nächste Lauf wieder bei null anfängt.

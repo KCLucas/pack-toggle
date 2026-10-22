@@ -64,6 +64,9 @@ public class PackToggleClient implements ClientModInitializer {
 								Component.translatable("packtoggle.tutorial.hotkey.text"),
 								Identifier.fromNamespaceAndPath(MOD_ID, "textures/tutorial/hotkey.png"))),
 				List.of(
+						new Onboarding.Release("1.2.1", List.of(
+								Component.translatable("packtoggle.news.1_2_1.hotkey"),
+								Component.translatable("packtoggle.news.1_2_1.hints"))),
 						new Onboarding.Release("1.2.0", List.of(
 								Component.translatable("packtoggle.news.1_2_0.folder"),
 								Component.translatable("packtoggle.news.1_2_0.news"))),
@@ -83,6 +86,9 @@ public class PackToggleClient implements ClientModInitializer {
 
 		// Während die Ressourcen noch neu laden, würde ein weiterer Wechsel nur einen zweiten Ladevorgang anstoßen.
 		if (client.getOverlay() != null) {
+			if (save || toggle) {
+				PackManager.toast(client, Component.translatable("packtoggle.toast.still_loading"));
+			}
 			return;
 		}
 		if (save) {
