@@ -134,7 +134,7 @@ public final class PackManager {
 	}
 
 	public static void toast(Minecraft client, Component message) {
-		SystemToast.addOrUpdate(client.getToastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
+		SystemToast.addOrUpdate(client.gui.toastManager(), SystemToast.SystemToastId.PERIODIC_NOTIFICATION,
 				TOAST_TITLE, message);
 	}
 }

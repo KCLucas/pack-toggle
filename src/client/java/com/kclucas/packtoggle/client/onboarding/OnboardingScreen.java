@@ -1,7 +1,8 @@
 package com.kclucas.packtoggle.client.onboarding;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.KeyEvent;
@@ -12,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -194,7 +194,7 @@ public class OnboardingScreen extends Screen {
 	/** Fertig oder übersprungen: In beiden Fällen gilt die installierte Version jeder Mod als gesehen. */
 	private void finish() {
 		Onboarding.markSeen(this.pending.stream().map(Onboarding.Pending::tutorial).toList());
-		this.minecraft.setScreen(this.parent);
+		this.minecraft.gui.setScreen(this.parent);
 	}
 
 	@Override
@@ -205,13 +205,13 @@ public class OnboardingScreen extends Screen {
 	@Override
 	public boolean keyPressed(KeyEvent event) {
 		switch (event.key()) {
-			case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
+			case InputConstants.KEY_RIGHT, InputConstants.KEY_RETURN, InputConstants.KEY_NUMPADENTER -> {
 				if (this.index >= 0 || selectedCount() > 0) {
 					next();
 				}
 				return true;
 			}
-			case GLFW.GLFW_KEY_LEFT -> {
+			case InputConstants.KEY_LEFT -> {
 				back();
 				return true;
 			}
@@ -227,7 +227,7 @@ public class OnboardingScreen extends Screen {
 			return true;
 		}
 		// Auf der Übersicht wählt ein Klick auf eine Mod-Karte sie an oder ab.
-		if (this.index < 0 && this.pending.size() > 1 && event.button() == 0) {
+		if (this.index < 0 && this.pending.size() > 1 && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			int card = cardAt(event.x(), event.y());
 			if (card >= 0) {
 				this.selected[card] = !this.selected[card];
@@ -251,9 +251,9 @@ public class OnboardingScreen extends Screen {
 	// ---- Zeichnen ----
 
 	@Override
-	public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
+	public void extractRenderState(GuiGraphicsExtractor graphics, int mouseX, int mouseY, float partialTick) {
 		graphics.fill(0, 0, this.width, this.height, COLOR_DIM);
-		super.render(graphics, mouseX, mouseY, partialTick);
+		super.extractRenderState(graphics, mouseX, mouseY, partialTick);
 		if (this.index < 0) {
 			renderWelcome(graphics, mouseX, mouseY);
 			return;
@@ -267,7 +267,7 @@ public class OnboardingScreen extends Screen {
 		}
 	}
 
-	private void renderWelcome(GuiGraphics graphics, int mouseX, int mouseY) {
+	private void renderWelcome(GuiGraphicsExtractor graphics, int mouseX, int mouseY) {
 		boolean multiple = this.pending.size() > 1;
 		boolean updates = onlyUpdates();
 		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
@@ -288,7 +288,7 @@ public class OnboardingScreen extends Screen {
 		drawScaledCentered(graphics, heading.copy().withStyle(ChatFormatting.BOLD), this.width / 2, y, headingScale, COLOR_GOLD);
 		y += headingHeight + 8;
 		for (FormattedCharSequence line : introLines) {
-			graphics.drawCenteredString(this.font, line, this.width / 2, y, COLOR_MUTED);
+			graphics.centeredText(this.font, line, this.width / 2, y, COLOR_MUTED);
 			y += 10;
 		}
 		y += 10;
@@ -303,12 +303,12 @@ public class OnboardingScreen extends Screen {
 		}
 
 		if (multiple) {
-			graphics.drawCenteredString(this.font, Component.translatable("kclucas.onboarding.welcome.pick"),
+			graphics.centeredText(this.font, Component.translatable("kclucas.onboarding.welcome.pick"),
 					this.width / 2, y + 4, COLOR_FAINT);
 		}
 	}
 
-	private void renderCard(GuiGraphics graphics, Onboarding.Pending entry, int x, int y, int width,
+	private void renderCard(GuiGraphicsExtractor graphics, Onboarding.Pending entry, int x, int y, int width,
 			boolean selectable, boolean isSelected, boolean hovered) {
 		Onboarding.Tutorial tutorial = entry.tutorial();
 		int border = selectable && isSelected ? COLOR_ACCENT : COLOR_BORDER;
@@ -321,15 +321,15 @@ public class OnboardingScreen extends Screen {
 		int textLeft = x + 44;
 		int textWidth = width - 44 - (selectable ? 28 : 8);
 		int nameColor = !selectable || isSelected ? COLOR_TEXT : COLOR_FAINT;
-		graphics.drawString(this.font, tutorial.name().copy().withStyle(ChatFormatting.BOLD), textLeft, y + 6, nameColor, true);
+		graphics.text(this.font, tutorial.name().copy().withStyle(ChatFormatting.BOLD), textLeft, y + 6, nameColor, true);
 		if (entry.isUpdate()) {
 			// Bei Updates statt der Beschreibung: von welcher auf welche Version.
 			Component update = Component.translatable("kclucas.onboarding.updated_to", tutorial.modVersion());
-			graphics.drawString(this.font, update, textLeft, y + 18, COLOR_GOLD, false);
+			graphics.text(this.font, update, textLeft, y + 18, COLOR_GOLD, false);
 		} else {
 			List<FormattedCharSequence> lines = this.font.split(tutorial.description(), textWidth);
 			for (int i = 0; i < Math.min(2, lines.size()); i++) {
-				graphics.drawString(this.font, lines.get(i), textLeft, y + 18 + i * 9, COLOR_MUTED, false);
+				graphics.text(this.font, lines.get(i), textLeft, y + 18 + i * 9, COLOR_MUTED, false);
 			}
 		}
 
@@ -353,7 +353,7 @@ public class OnboardingScreen extends Screen {
 			"..##....",
 	};
 
-	private static void drawCheckMark(GuiGraphics graphics, int x, int y) {
+	private static void drawCheckMark(GuiGraphicsExtractor graphics, int x, int y) {
 		for (int row = 0; row < CHECK_MARK.length; row++) {
 			for (int col = 0; col < CHECK_MARK[row].length(); col++) {
 				if (CHECK_MARK[row].charAt(col) == '#') {
@@ -364,26 +364,26 @@ public class OnboardingScreen extends Screen {
 	}
 
 	/** Kopfzeile: links die Mod, rechts wo man gerade ist, darunter ein Fortschrittsbalken. */
-	private void renderHeader(GuiGraphics graphics, Step step) {
+	private void renderHeader(GuiGraphicsExtractor graphics, Step step) {
 		Onboarding.Tutorial tutorial = step.pending().tutorial();
 		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
 		int left = (this.width - panelWidth) / 2;
 		int right = left + panelWidth;
 
 		drawIcon(graphics, tutorial.icon(), left, 8, 16);
-		graphics.drawString(this.font, tutorial.name().copy().withStyle(ChatFormatting.BOLD), left + 22, 12, COLOR_TEXT, true);
+		graphics.text(this.font, tutorial.name().copy().withStyle(ChatFormatting.BOLD), left + 22, 12, COLOR_TEXT, true);
 		Component position = step.page() == null
 				? Component.translatable("kclucas.onboarding.news")
 				: Component.translatable("kclucas.onboarding.step", step.pageIndex() + 1, step.pageCount());
 		if (selectedCount() > 1 && this.pending.size() > 1) {
 			position = Component.translatable("kclucas.onboarding.mod_and", step.modIndex() + 1, selectedCount(), position);
 		}
-		graphics.drawString(this.font, position, right - this.font.width(position), 12, COLOR_FAINT, false);
+		graphics.text(this.font, position, right - this.font.width(position), 12, COLOR_FAINT, false);
 		graphics.fill(left, 28, right, 29, COLOR_BORDER);
 		graphics.fill(left, 28, left + panelWidth * (step.pageIndex() + 1) / step.pageCount(), 29, COLOR_ACCENT);
 	}
 
-	private void renderPage(GuiGraphics graphics, Onboarding.Page page) {
+	private void renderPage(GuiGraphicsExtractor graphics, Onboarding.Page page) {
 		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
 		int textWidth = Math.min(panelWidth, 380);
 		List<FormattedCharSequence> lines = this.font.split(page.text(), textWidth);
@@ -411,16 +411,16 @@ public class OnboardingScreen extends Screen {
 			y = top + Math.max(0, (bottom - top - textBlock) / 2);
 		}
 
-		graphics.drawCenteredString(this.font, page.title().copy().withStyle(ChatFormatting.BOLD), this.width / 2, y, COLOR_ACCENT);
+		graphics.centeredText(this.font, page.title().copy().withStyle(ChatFormatting.BOLD), this.width / 2, y, COLOR_ACCENT);
 		y += 14;
 		for (int i = 0; i < shownLines; i++) {
-			graphics.drawCenteredString(this.font, lines.get(i), this.width / 2, y, COLOR_TEXT);
+			graphics.centeredText(this.font, lines.get(i), this.width / 2, y, COLOR_TEXT);
 			y += 10;
 		}
 	}
 
 	/** "Was ist neu": großes Icon, Überschrift, darunter je Version die Stichpunkte. */
-	private void renderNews(GuiGraphics graphics, Onboarding.Pending entry) {
+	private void renderNews(GuiGraphicsExtractor graphics, Onboarding.Pending entry) {
 		int panelWidth = Math.min(this.width - 16, CONTENT_WIDTH);
 		int left = (this.width - panelWidth) / 2;
 		int textWidth = panelWidth - 24;
@@ -457,7 +457,7 @@ public class OnboardingScreen extends Screen {
 		Component title = several
 				? Component.translatable("kclucas.onboarding.news_since", entry.seenVersion())
 				: Component.translatable("kclucas.onboarding.news_title", entry.news().getFirst().version());
-		graphics.drawCenteredString(this.font, title.copy().withStyle(ChatFormatting.BOLD), this.width / 2, y, COLOR_ACCENT);
+		graphics.centeredText(this.font, title.copy().withStyle(ChatFormatting.BOLD), this.width / 2, y, COLOR_ACCENT);
 		y += 14;
 
 		for (Line line : lines) {
@@ -466,21 +466,21 @@ public class OnboardingScreen extends Screen {
 			if (line.indent() > 0 && line.gapBefore() > 0) {
 				graphics.fill(x - 7, y + 3, x - 4, y + 6, COLOR_ACCENT);
 			}
-			graphics.drawString(this.font, line.text(), x, y, line.color(), false);
+			graphics.text(this.font, line.text(), x, y, line.color(), false);
 			y += 10;
 		}
 	}
 
-	private void drawIcon(GuiGraphics graphics, Identifier icon, int x, int y, int size) {
+	private void drawIcon(GuiGraphicsExtractor graphics, Identifier icon, int x, int y, int size) {
 		graphics.blit(RenderPipelines.GUI_TEXTURED, icon, x, y, 0.0F, 0.0F, size, size,
 				ICON_TEXTURE_SIZE, ICON_TEXTURE_SIZE, ICON_TEXTURE_SIZE, ICON_TEXTURE_SIZE);
 	}
 
-	private void drawScaledCentered(GuiGraphics graphics, Component text, int centerX, int y, float scale, int color) {
+	private void drawScaledCentered(GuiGraphicsExtractor graphics, Component text, int centerX, int y, float scale, int color) {
 		graphics.pose().pushMatrix();
 		graphics.pose().translate(centerX, y);
 		graphics.pose().scale(scale, scale);
-		graphics.drawCenteredString(this.font, text, 0, 0, color);
+		graphics.centeredText(this.font, text, 0, 0, color);
 		graphics.pose().popMatrix();
 	}
 }

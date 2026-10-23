@@ -4,13 +4,12 @@ import com.kclucas.packtoggle.client.onboarding.Onboarding;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
-import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
+import net.fabricmc.fabric.api.client.keymapping.v1.KeyMappingHelper;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.List;
 
@@ -33,10 +32,10 @@ public class PackToggleClient implements ClientModInitializer {
 	public void onInitializeClient() {
 		config = PackToggleConfig.load();
 
-		toggleKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-				"key.packtoggle.toggle", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_F8, CATEGORY));
-		saveKey = KeyBindingHelper.registerKeyBinding(new KeyMapping(
-				"key.packtoggle.save", InputConstants.Type.KEYSYM, InputConstants.UNKNOWN.getValue(), CATEGORY));
+		toggleKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.packtoggle.toggle", InputConstants.Type.KEYBOARD, InputConstants.KEY_F8, CATEGORY));
+		saveKey = KeyMappingHelper.registerKeyMapping(new KeyMapping(
+				"key.packtoggle.save", InputConstants.Type.KEYBOARD, InputConstants.UNKNOWN.getValue(), CATEGORY));
 
 		ClientTickEvents.END_CLIENT_TICK.register(this::onClientTick);
 
@@ -85,7 +84,7 @@ public class PackToggleClient implements ClientModInitializer {
 		}
 
 		// Während die Ressourcen noch neu laden, würde ein weiterer Wechsel nur einen zweiten Ladevorgang anstoßen.
-		if (client.getOverlay() != null) {
+		if (client.gui.overlay() != null) {
 			if (save || toggle) {
 				PackManager.toast(client, Component.translatable("packtoggle.toast.still_loading"));
 			}

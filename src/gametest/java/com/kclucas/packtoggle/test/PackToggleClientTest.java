@@ -1,5 +1,6 @@
 package com.kclucas.packtoggle.test;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.kclucas.packtoggle.client.PackManager;
 import com.kclucas.packtoggle.client.PackToggleClient;
 import com.kclucas.packtoggle.client.onboarding.OnboardingScreen;
@@ -12,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.repository.PackRepository;
 import net.minecraft.SharedConstants;
 import net.minecraft.server.packs.PackType;
-import org.lwjgl.glfw.GLFW;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -43,7 +43,7 @@ public class PackToggleClientTest implements FabricClientGameTest {
 		context.getInput().resizeWindow(2560, 1440);
 		context.runOnClient(c -> {
 			c.options.guiScale().set(3);
-			c.resizeDisplay();
+			c.resizeGui();
 		});
 
 		// Erster Start im Profil: Der Willkommens-Screen erscheint von selbst. Hier mit nur einer Mod.
@@ -51,14 +51,14 @@ public class PackToggleClientTest implements FabricClientGameTest {
 		context.waitTicks(10);
 		context.takeScreenshot("onboarding-1-willkommen");
 		for (int step = 0; step < 3; step++) {
-			context.getInput().pressKey(GLFW.GLFW_KEY_RIGHT);
+			context.getInput().pressKey(InputConstants.KEY_RIGHT);
 			context.waitTicks(5);
 			context.takeScreenshot("onboarding-" + (step + 2) + "-schritt");
 		}
 		// Überspringen (Esc) schließt den Screen sofort.
-		context.getInput().pressKey(GLFW.GLFW_KEY_ESCAPE);
+		context.getInput().pressKey(InputConstants.KEY_ESCAPE);
 		context.waitTicks(10);
-		if (context.computeOnClient(c -> c.screen instanceof OnboardingScreen)) {
+		if (context.computeOnClient(c -> c.gui.screen() instanceof OnboardingScreen)) {
 			throw new AssertionError("Esc sollte den Tutorial-Screen schließen");
 		}
 
@@ -98,16 +98,16 @@ public class PackToggleClientTest implements FabricClientGameTest {
 
 		// --- Hotkey im Spiel ---
 		try (TestSingleplayerContext world = context.worldBuilder().create()) {
-			world.getClientWorld().waitForChunksRender();
+			world.getConnection().waitForChunksRender();
 			context.waitTicks(20);
 
-			context.getInput().pressKey(GLFW.GLFW_KEY_F8);
+			context.getInput().pressKey(InputConstants.KEY_F8);
 			context.waitTicks(5);
 			waitForReload(context);
 			expectActive(context, List.of(), "nach erstem F8");
 			context.takeScreenshot("packtoggle-4-hotkey-aus");
 
-			context.getInput().pressKey(GLFW.GLFW_KEY_F8);
+			context.getInput().pressKey(InputConstants.KEY_F8);
 			context.waitTicks(5);
 			waitForReload(context);
 			expectActive(context, ORDER, "nach zweitem F8");
@@ -126,12 +126,12 @@ public class PackToggleClientTest implements FabricClientGameTest {
 			});
 			waitForReload(context);
 			expectActive(context, changed, "nach dem Ändern");
-			context.getInput().pressKey(GLFW.GLFW_KEY_F8);
+			context.getInput().pressKey(InputConstants.KEY_F8);
 			context.waitTicks(5);
 			waitForReload(context);
 			expectActive(context, List.of(), "nach F8 mit geänderter Auswahl");
 			expectSaved(context, changed);
-			context.getInput().pressKey(GLFW.GLFW_KEY_F8);
+			context.getInput().pressKey(InputConstants.KEY_F8);
 			context.waitTicks(5);
 			waitForReload(context);
 			expectActive(context, changed, "nach erneutem F8");
@@ -185,7 +185,7 @@ public class PackToggleClientTest implements FabricClientGameTest {
 
 	private static void waitForReload(ClientGameTestContext context) {
 		context.waitTicks(5);
-		context.waitFor(c -> c.getOverlay() == null, 1200);
+		context.waitFor(c -> c.gui.overlay() == null, 1200);
 		context.waitTicks(10);
 	}
 

@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 public final class Onboarding {
 
 	/** Version dieses Codes. Bei jeder Änderung an Vorlage oder Screen erhöhen. */
-	public static final int CODE_VERSION = 3;
+	public static final int CODE_VERSION = 4;
 
 	private static final String SHARE_KEY = "kclucas:onboarding";
 	private static final Logger LOGGER = LoggerFactory.getLogger("kclucas-onboarding");
@@ -127,7 +127,7 @@ public final class Onboarding {
 
 	private static void onTick(Minecraft client) {
 		Map<String, Object> shared = shared();
-		if (Boolean.TRUE.equals(shared.get("presented")) || client.getOverlay() != null) {
+		if (Boolean.TRUE.equals(shared.get("presented")) || client.gui.overlay() != null) {
 			return;
 		}
 		if (!isGoodMoment(client)) {
@@ -144,7 +144,7 @@ public final class Onboarding {
 	 * Greift beides nicht, erscheint der Screen beim ersten Betreten einer Welt.
 	 */
 	private static boolean isGoodMoment(Minecraft client) {
-		Screen screen = client.screen;
+		Screen screen = client.gui.screen();
 		if (screen != stableScreen) {
 			stableScreen = screen;
 			stableTicks = 0;
@@ -196,14 +196,14 @@ public final class Onboarding {
 			return;
 		}
 		Minecraft client = Minecraft.getInstance();
-		client.setScreen(new OnboardingScreen(client.screen, pending, true));
+		client.gui.setScreen(new OnboardingScreen(client.gui.screen(), pending, true));
 	}
 
 	private static void presentSingle(String modId) {
 		for (Tutorial tutorial : registered()) {
 			if (tutorial.id().equals(modId)) {
 				Minecraft client = Minecraft.getInstance();
-				client.setScreen(new OnboardingScreen(client.screen, List.of(new Pending(tutorial, null, List.of())), false));
+				client.gui.setScreen(new OnboardingScreen(client.gui.screen(), List.of(new Pending(tutorial, null, List.of())), false));
 				return;
 			}
 		}
