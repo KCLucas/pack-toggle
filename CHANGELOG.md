@@ -1,5 +1,8 @@
 # Changelog
 
+## 1.2.2
+- Lowered the required Fabric Loader version to 0.19.5, so the mod no longer crashes on launch with NoRisk Client and other launchers on an older loader
+
 ## 1.2.1
 - Fixed: the hotkey now remembers packs you added or reordered after saving, instead of bringing back only the old ones
 - Short hint when a restored pack is made for another Minecraft version
