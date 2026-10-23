@@ -46,7 +46,7 @@ import java.util.function.Consumer;
 public final class Onboarding {
 
 	/** Version dieses Codes. Bei jeder Änderung an Vorlage oder Screen erhöhen. */
-	public static final int CODE_VERSION = 3;
+	public static final int CODE_VERSION = 4;
 
 	private static final String SHARE_KEY = "kclucas:onboarding";
 	private static final Logger LOGGER = LoggerFactory.getLogger("kclucas-onboarding");

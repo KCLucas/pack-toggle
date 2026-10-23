@@ -1,5 +1,6 @@
 package com.kclucas.packtoggle.client.onboarding;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
@@ -12,7 +13,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.Identifier;
 import net.minecraft.util.FormattedCharSequence;
 import org.jspecify.annotations.Nullable;
-import org.lwjgl.glfw.GLFW;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -205,13 +205,13 @@ public class OnboardingScreen extends Screen {
 	@Override
 	public boolean keyPressed(KeyEvent event) {
 		switch (event.key()) {
-			case GLFW.GLFW_KEY_RIGHT, GLFW.GLFW_KEY_ENTER, GLFW.GLFW_KEY_KP_ENTER -> {
+			case InputConstants.KEY_RIGHT, InputConstants.KEY_RETURN, InputConstants.KEY_NUMPADENTER -> {
 				if (this.index >= 0 || selectedCount() > 0) {
 					next();
 				}
 				return true;
 			}
-			case GLFW.GLFW_KEY_LEFT -> {
+			case InputConstants.KEY_LEFT -> {
 				back();
 				return true;
 			}
@@ -227,7 +227,7 @@ public class OnboardingScreen extends Screen {
 			return true;
 		}
 		// Auf der Übersicht wählt ein Klick auf eine Mod-Karte sie an oder ab.
-		if (this.index < 0 && this.pending.size() > 1 && event.button() == 0) {
+		if (this.index < 0 && this.pending.size() > 1 && event.button() == InputConstants.MOUSE_BUTTON_LEFT) {
 			int card = cardAt(event.x(), event.y());
 			if (card >= 0) {
 				this.selected[card] = !this.selected[card];
